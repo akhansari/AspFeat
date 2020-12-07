@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="FSharp.SystemTextJson" Version="0.15.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="JsonSerializer.fs" />
+    <Compile Include="Builder\Host.fs" />
+    <Compile Include="Builder\WebHost.fs" />
+    <Compile Include="Builder\Endpoint.fs" />
+    <Compile Include="Endpoint\Endpoint.fs" />
+  </ItemGroup>
+
+</Project>
