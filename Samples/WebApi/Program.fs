@@ -1,12 +1,11 @@
 module Program
 
-open AspFeat.Endpoint.Builder
-open AspFeat.Endpoint.Response
 open AspFeat.Builder
+open AspFeat.Endpoint
+open AspFeat.HttpContext.Response
 
 [<EntryPoint>]
 let main _ =
     let configureEndpoints bld =
         get bld "/" (writeAsJson {| Id = 1; Product = "Cat Food" |})
-    [ Endpoint.featWith configureEndpoints ]
-    |> WebHost.run
+    WebHost.run [ Endpoint.feat configureEndpoints ]

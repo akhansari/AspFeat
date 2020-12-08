@@ -7,7 +7,8 @@
 
   <ItemGroup>
     <Compile Include="Helpers.fs" />
-    <Compile Include="EndpointsTests.fs" />
+    <Compile Include="EndpointTests.fs" />
+    <Compile Include="HttpContextTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

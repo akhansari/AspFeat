@@ -7,10 +7,12 @@
 
   <ItemGroup>
     <Compile Include="JsonSerializer.fs" />
+    <Compile Include="Endpoint.fs" />
+    <Compile Include="HttpContext.fs" />
     <Compile Include="Builder\Host.fs" />
     <Compile Include="Builder\WebHost.fs" />
     <Compile Include="Builder\Endpoint.fs" />
-    <Compile Include="Endpoint\Endpoint.fs" />
+    <Compile Include="Builder\Cors.fs" />
   </ItemGroup>
 
 </Project>

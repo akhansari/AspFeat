@@ -17,5 +17,5 @@ let private useApi configureEndpoints (app: IApplicationBuilder) =
         .UseRouting()
         .UseEndpoints(Action<IEndpointRouteBuilder> configureEndpoints)
 
-let featWith configureEndpoints =
+let feat configureEndpoints =
     (addApi, useApi configureEndpoints)

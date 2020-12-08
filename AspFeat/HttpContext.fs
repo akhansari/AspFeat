@@ -1,16 +1,7 @@
-﻿namespace AspFeat.Endpoint
+﻿namespace AspFeat.HttpContext
 
 open System
-open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Http
-
-module Builder =
-
-    let get' (bld: IEndpointRouteBuilder) pattern handler =
-        bld.MapGet(pattern, RequestDelegate handler)
-    let get bld pattern handler =
-        get' bld pattern handler |> ignore
 
 module Response =
 
@@ -56,3 +47,9 @@ module QueryString =
         ctx.Request.Query
         |> Seq.map (fun kv -> (kv.Key, Seq.toList kv.Value))
         |> Map.ofSeq
+
+[<RequireQualifiedAccess>]
+module Header =
+
+    let setLocation (ctx: HttpContext) uri =
+        ctx.Response.GetTypedHeaders().Location <- Uri (uri, UriKind.Relative)
