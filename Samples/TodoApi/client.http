@@ -1,0 +1,28 @@
+﻿
+###
+GET http://localhost:5000/todos/
+
+###
+GET http://localhost:5000/todos/?completed=true
+
+###
+POST http://localhost:5000/todos/
+content-type: application/json
+
+{
+  "todo": "hello"
+}
+
+###
+GET http://localhost:5000/todos/1
+
+###
+PUT  http://localhost:5000/todos/1
+content-type: application/json
+
+{
+  "completed": true
+}
+
+###
+DELETE  http://localhost:5000/todos/1

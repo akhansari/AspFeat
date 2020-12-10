@@ -7,9 +7,9 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "AspFeat", "AspFeat\AspFeat.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CB6F6CC3-A0DE-4FD1-A260-E8EF213E295C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "WebApi", "Samples\WebApi\WebApi.fsproj", "{322D51E3-4334-4CD3-A3D6-61852DC35702}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TodoApi", "Samples\TodoApi\TodoApi.fsproj", "{322D51E3-4334-4CD3-A3D6-61852DC35702}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AspFeat.Tests", "AspFeat.Tests\AspFeat.Tests.fsproj", "{030A1213-78A4-4509-9ABC-F3DFC174CA37}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "AspFeat.Tests", "AspFeat.Tests\AspFeat.Tests.fsproj", "{030A1213-78A4-4509-9ABC-F3DFC174CA37}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

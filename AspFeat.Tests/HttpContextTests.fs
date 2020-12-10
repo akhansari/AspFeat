@@ -1,55 +1,59 @@
 module HttpContext
 
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open FSharp.Control.Tasks
 open Swensen.Unquote
 open Xunit
 open AspFeat.Builder
 open AspFeat.Endpoint
 open AspFeat.HttpContext
-open AspFeat.HttpContext.Response
-open System
 
 [<Literal>]
 let echo = "echo"
 
 [<Fact>]
-let ``should get route value`` () = async {
-    let handler ctx =
-        RouteValue.find ctx "id" =! echo
-        empty ctx
-    let configureEndpoints bld = get bld "/{id}" handler
-    use! host = run [ Endpoint.feat configureEndpoints ]
-    do! requestString host (Get $"/{echo}") |> Async.Ignore
-}
+let ``should get route value`` () =
+    unitTask {
+        let handler ctx =
+            RouteValue.find ctx "id" =! echo
+            noContent ctx
+        let configureEndpoints bld = http bld Get "/{id}" handler
+        use! host = run [ Endpoint.feat configureEndpoints ]
+        do! request host (RequestMethod.Get $"/{echo}") :> Task
+    }
 
 [<Fact>]
-let ``should get query strings`` () = async {
-    let handler ctx =
-        QueryString.toList ctx
-        =! Map.ofList [ (echo, ["1"; "2"]) ]
-        empty ctx
-    let configureEndpoints bld = get bld "/" handler
-    use! host = run [ Endpoint.feat configureEndpoints ]
-    do! requestString host (Get $"/?{echo}=1&{echo}=2") |> Async.Ignore
-}
+let ``should get query strings`` () = 
+    unitTask {
+        let handler ctx =
+            QueryString.toList ctx
+            =! Map.ofList [ (echo, ["1"; "2"]) ]
+            noContent ctx
+        let configureEndpoints bld = http bld Get "/" handler
+        use! host = run [ Endpoint.feat configureEndpoints ]
+        do! request host (RequestMethod.Get $"/?{echo}=1&{echo}=2") :> Task
+    }
 
 [<Fact>]
-let ``should get only one query string value`` () = async {
-    let handler ctx =
-        QueryString.tryFindOne ctx echo =! Some "1"
-        empty ctx
-    let configureEndpoints bld = get bld "/" handler
-    use! host = run [ Endpoint.feat configureEndpoints ]
-    do! requestString host (Get $"/?{echo}=1&{echo}=2") |> Async.Ignore
-}
+let ``should get only one query string value`` () =
+    unitTask {
+        let handler ctx =
+            QueryString.tryFindOne ctx echo =! Some "1"
+            noContent ctx
+        let configureEndpoints bld = http bld Get "/" handler
+        use! host = run [ Endpoint.feat configureEndpoints ]
+        do! request host (RequestMethod.Get $"/?{echo}=1&{echo}=2") :> Task
+    }
 
 [<Fact>]
-let ``should write location`` () = async {
-    let handler (ctx: HttpContext) =
-        Header.setLocation ctx echo
-        empty ctx
-    let configureEndpoints bld = get bld "/" handler
-    use! host = run [ Endpoint.feat configureEndpoints ]
-    let! res = request host (Get "/")
-    string res.Headers.Location =! echo
-}
+let ``should write location`` () =
+    unitTask {
+        let handler (ctx: HttpContext) =
+            setLocation ctx echo
+            noContent ctx
+        let configureEndpoints bld = http bld Get "/" handler
+        use! host = run [ Endpoint.feat configureEndpoints ]
+        let! res = request host (RequestMethod.Get "/")
+        string res.Headers.Location =! echo
+    }

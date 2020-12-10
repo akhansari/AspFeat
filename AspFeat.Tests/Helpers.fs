@@ -2,6 +2,7 @@
 module Helpers
 
 open System.Net.Http
+open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.Hosting
@@ -21,19 +22,20 @@ type RequestMethod =
     | Post of (string * HttpContent)
     | Patch of (string * HttpContent)
 
-let request (host: IHost) method = async {
-    use client = host.GetTestClient()
-    return!
-        match method with
-        | Get uri -> client.GetAsync uri
-        | Delete uri -> client.DeleteAsync uri
-        | Post (uri, content) -> client.PostAsync (uri, content)
-        | Put (uri, content) -> client.PutAsync (uri, content)
-        | Patch (uri, content) -> client.PatchAsync (uri, content)
-        |> Async.AwaitTask
-}
+let request (host: IHost) method = 
+    task {
+        use client = host.GetTestClient()
+        return!
+            match method with
+            | Get uri -> client.GetAsync uri
+            | Delete uri -> client.DeleteAsync uri
+            | Post (uri, content) -> client.PostAsync (uri, content)
+            | Put (uri, content) -> client.PutAsync (uri, content)
+            | Patch (uri, content) -> client.PatchAsync (uri, content)
+    }
 
-let requestString host method = async {
-    use! res = request host method
-    return! res.Content.ReadAsStringAsync() |> Async.AwaitTask
-}
+let requestString host method = 
+    task {
+        use! res = request host method
+        return! res.Content.ReadAsStringAsync()
+    }

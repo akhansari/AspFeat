@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <Compile Include="Repo.fs" />
     <Compile Include="Program.fs" />
+    <None Include="client.http" />
   </ItemGroup>
 
   <ItemGroup>

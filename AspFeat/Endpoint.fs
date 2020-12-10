@@ -4,8 +4,14 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Http
 
-let get' (bld: IEndpointRouteBuilder) pattern handler =
-    bld.MapGet(pattern, RequestDelegate handler)
+type MapHttpMethod =
+    | Get
+    | Post
+    | Put
+    | Delete
 
-let get bld pattern handler =
-    get' bld pattern handler |> ignore
+let mapHttp (bld: IEndpointRouteBuilder) method pattern handler =
+    bld.MapMethods(pattern, [ string method ], RequestDelegate handler)
+
+let http bld pattern method handler =
+    mapHttp bld pattern method handler |> ignore
