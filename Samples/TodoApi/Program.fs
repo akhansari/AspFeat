@@ -19,9 +19,8 @@ let getTodos ctx =
        | None -> id
     |> writeAsJsonTo ctx
 
-let getTodo ctx =
-    RouteValue.find ctx "id" |> int32
-    |> db.TryGet
+let getTodo id ctx =
+    db.TryGet id
     |> Option.map (writeAsJsonTo ctx)
     |> Option.defaultWith (fun () -> notFound ctx)
 
@@ -33,7 +32,7 @@ let addTodo ctx =
             |> Option.defaultWith (fun () -> conflict ctx)
     }
 
-let updateTodo ctx =
+let updateTodo id ctx =
     let update old todo completed =
         match (todo, completed) with
         | Some todo, Some completed -> { old with Todo = todo; Completed = completed }
@@ -41,7 +40,6 @@ let updateTodo ctx =
         | None, Some completed      -> { old with Completed = completed }
         | None, None                ->   old
     unitTask {
-        let id = RouteValue.find ctx "id" |> int32
         let! model = readAsJson<{| Todo: string option; Completed: bool option |}> ctx
         do! db.TryGet id
             |> Option.map (fun old ->
@@ -52,19 +50,19 @@ let updateTodo ctx =
             |> Option.defaultWith (fun () -> notFound ctx)
     }
 
-let deleteTodo ctx =
-    RouteValue.find ctx "id" |> int32
-    |> db.TryRemove
+let deleteTodo id ctx =
+    db.TryRemove id
     |> Option.map (fun _ -> noContent ctx)
     |> Option.defaultWith (fun () -> notFound ctx)
 
 let configureEndpoints bld =
-    let http = http bld
-    http Get    "/todos"          getTodos
-    http Get    "/todos/{id:int}" getTodo
-    http Put    "/todos/{id:int}" updateTodo
-    http Post   "/todos"          addTodo
-    http Delete "/todos/{id:int}" deleteTodo
+    let http  = http  bld
+    let httpf = httpf bld
+    http  Get    "/todos"          getTodos
+    httpf Get    "/todos/{id:int}" getTodo
+    httpf Put    "/todos/{id:int}" updateTodo
+    http  Post   "/todos"          addTodo
+    httpf Delete "/todos/{id:int}" deleteTodo
 
 [<EntryPoint>]
 let main _ =
