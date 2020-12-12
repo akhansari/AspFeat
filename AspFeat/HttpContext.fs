@@ -1,4 +1,4 @@
-﻿module AspFeat.HttpContext
+module AspFeat.HttpContext
 
 open System
 open Microsoft.AspNetCore.Http
@@ -34,6 +34,11 @@ let createdWith<'T> ctx uri value =
     setLocation ctx uri
     setStatusCode ctx StatusCodes.Status201Created
     writeAsJsonTo ctx value
+
+let writeProblemDetails ctx (problem: ProblemDetails) =
+    let status = problem.Status |> Option.defaultValue StatusCodes.Status500InternalServerError
+    setStatusCode ctx status
+    writeAsJsonTo ctx problem
 
 [<RequireQualifiedAccess>]
 module RouteValue =

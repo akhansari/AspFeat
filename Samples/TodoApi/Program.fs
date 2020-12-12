@@ -24,13 +24,10 @@ let getTodo id ctx =
     |> Option.map (writeAsJsonTo ctx)
     |> Option.defaultWith (fun () -> notFound ctx)
 
-let addTodo ctx =
-    unitTask {
-        let! model = readAsJson<{| Todo: string |}> ctx
-        do! db.TryAdd ({ Todo = model.Todo; Completed = false })
-            |> Option.map (fun (id, todo) -> createdWith ctx $"/{id}" todo)
-            |> Option.defaultWith (fun () -> conflict ctx)
-    }
+let addTodo (model: {| Todo: string |}) ctx =
+    db.TryAdd ({ Todo = model.Todo; Completed = false })
+    |> Option.map (fun (id, todo) -> createdWith ctx $"/{id}" todo)
+    |> Option.defaultWith (fun () -> conflict ctx)
 
 let updateTodo id ctx =
     let update old todo completed =
@@ -56,13 +53,11 @@ let deleteTodo id ctx =
     |> Option.defaultWith (fun () -> notFound ctx)
 
 let configureEndpoints bld =
-    let http  = http  bld
-    let httpf = httpf bld
-    http  Get    "/todos"          getTodos
-    httpf Get    "/todos/{id:int}" getTodo
-    httpf Put    "/todos/{id:int}" updateTodo
-    http  Post   "/todos"          addTodo
-    httpf Delete "/todos/{id:int}" deleteTodo
+    http  bld Get    "/todos"          getTodos
+    httpf bld Get    "/todos/{id:int}" getTodo
+    httpf bld Put    "/todos/{id:int}" updateTodo
+    httpj bld Post   "/todos"          addTodo
+    httpf bld Delete "/todos/{id:int}" deleteTodo
 
 [<EntryPoint>]
 let main _ =
