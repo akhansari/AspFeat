@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Include="ProblemDetails.fs" />
+    <Compile Include="JsonSerializer.fs" />
+    <Compile Include="Reflect.fs" />
+    <Compile Include="HttpContext.fs" />
+    <Compile Include="Endpoint.fs" />
+    <Compile Include="Builder\Host.fs" />
+    <Compile Include="Builder\WebHost.fs" />
+    <Compile Include="Builder\Endpoint.fs" />
+    <Compile Include="Builder\Cors.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="FSharp.SystemTextJson" Version="0.15.14" />
+    <PackageReference Include="Ply" Version="0.3.1" />
+  </ItemGroup>
+
+</Project>
