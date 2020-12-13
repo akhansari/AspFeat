@@ -17,7 +17,10 @@ let parserOf = function
 
 let private makeTuple tupleType values = FSharpValue.MakeTuple (values, tupleType)
 
-let makeTupleInjection<'T> elemNames =
+type ElemName = string
+type ElemValue = string
+
+let createTupleMaker<'T> elemNames =
     let injectType = typeof<'T>
     let injectIsTuple = FSharpType.IsTuple injectType
     let parsers =
@@ -30,7 +33,7 @@ let makeTupleInjection<'T> elemNames =
         if injectIsTuple
         then makeTuple injectType
         else Array.head
-    fun (valueOf: string -> string) ->
+    fun (valueOf: ElemName -> ElemValue) ->
         routeParams
         |> Array.map (fun (name, parser) -> valueOf name |> parser)
         |> makeType

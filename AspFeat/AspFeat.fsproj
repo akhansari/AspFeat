@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Include="Types.fs" />
+    <Compile Include="ProblemDetails.fs" />
     <Compile Include="JsonSerializer.fs" />
     <Compile Include="Reflect.fs" />
     <Compile Include="HttpContext.fs" />

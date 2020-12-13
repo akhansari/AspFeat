@@ -23,35 +23,35 @@ let mapHttp (bld: IEndpointRouteBuilder) (method: MapHttpMethod) pattern handler
 let http bld method pattern handler =
     mapHttp bld method pattern handler |> ignore
 
-let httpf<'T> bld method pattern (handler: 'T -> HttpHandler) =
-    let getRouteInjection =
-        RoutePatternFactory.Parse(pattern).Parameters
-        |> Seq.map (fun p -> p.Name) |> Seq.toArray
-        |> makeTupleInjection<'T>
+let private paramNamesOf pattern =
+    RoutePatternFactory.Parse(pattern).Parameters
+    |> Seq.map (fun p -> p.Name) |> Seq.toArray
+
+let httpf bld method pattern (handler: 'RouteValues -> HttpHandler) =
+    let makeRouteValues = createTupleMaker<'RouteValues> (paramNamesOf pattern)
     let wrapper ctx =
-        let inject = getRouteInjection (HttpContext.RouteValue.find ctx)
-        handler inject ctx
+        let routeValues = makeRouteValues (HttpContext.RouteValue.find ctx)
+        handler routeValues ctx
     http bld method pattern wrapper
 
-let private readJson<'T> ctx =
-    task {
-        try
-            let! model = HttpContext.readAsJson<'T> ctx
-            return Ok model
-        with e ->
-            return
-                ProblemDetails.create StatusCodes.Status400BadRequest "JSON parse error" e.Message
-                |> Error
-    }
-
-let httpj<'T> bld method pattern (handler: 'T -> HttpHandler) =
-    let wrapper (ctx: HttpContext) =
+let httpj bld method pattern (handler: 'JsonContent -> HttpHandler) =
+    let wrapper ctx =
         unitTask {
-            if ctx.Request.HasJsonContentType () then
-                match! readJson<'T> ctx with
-                | Ok model -> do! handler model ctx
-                | Error prob -> do! HttpContext.writeProblemDetails ctx prob
-            else
-                do! HttpContext.emptyWith ctx StatusCodes.Status415UnsupportedMediaType
+            match! HttpContext.readAsJson<'JsonContent> ctx with
+            | Ok content -> do! handler content ctx
+            | Error prob -> do! HttpContext.writeProblemDetails prob ctx
+        }
+    http bld method pattern wrapper
+
+let httpfj bld method pattern (handler: 'RouteValues -> 'JsonContent -> HttpHandler) =
+    let makeRouteValues = createTupleMaker<'RouteValues> (paramNamesOf pattern)
+    let wrapper ctx =
+        unitTask {
+            match! HttpContext.readAsJson<'JsonContent> ctx with
+            | Ok content ->
+                let routeValues = makeRouteValues (HttpContext.RouteValue.find ctx)
+                do! handler routeValues content ctx
+            | Error prob ->
+                do! HttpContext.writeProblemDetails prob ctx
         }
     http bld method pattern wrapper

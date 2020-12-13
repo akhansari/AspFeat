@@ -1,15 +1,9 @@
 module AspFeat.HttpContext
 
 open System
+open System.Text.Json
+open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Http
-
-let readAsJson<'T> (ctx: HttpContext) = ctx.Request.ReadFromJsonAsync<'T>()
-
-let write text (ctx: HttpContext) = ctx.Response.WriteAsync text
-let writeTo ctx text = write text ctx
-
-let writeAsJson<'T> (value: 'T) (ctx: HttpContext) = ctx.Response.WriteAsJsonAsync<'T> value
-let writeAsJsonTo<'T> ctx (value: 'T) = writeAsJson<'T> value ctx
 
 let setStatusCode (ctx: HttpContext) statusCode =
     ctx.Response.StatusCode <- statusCode
@@ -17,28 +11,49 @@ let setStatusCode (ctx: HttpContext) statusCode =
 let setLocation (ctx: HttpContext) uri =
     ctx.Response.GetTypedHeaders().Location <- Uri (uri, UriKind.Relative)
 
+let readAsJson<'T> (ctx: HttpContext) =
+    task {
+        try
+            let! content = ctx.Request.ReadFromJsonAsync<'T>()
+            return Ok content
+        with
+        | :? InvalidOperationException as e ->
+            return
+                ProblemDetails.create StatusCodes.Status415UnsupportedMediaType "Unsupported media type" e.Message
+                |> Error
+        | :? JsonException as e ->
+            return
+                ProblemDetails.create StatusCodes.Status400BadRequest "JSON parse error" e.Message
+                |> Error
+    }
+
+let write text (ctx: HttpContext) = ctx.Response.WriteAsync text
+let writeTo ctx text = write text ctx
+
+let writeAsJson<'T> (value: 'T) (ctx: HttpContext) = ctx.Response.WriteAsJsonAsync<'T> value
+let writeAsJsonTo<'T> ctx (value: 'T) = writeAsJson<'T> value ctx
+
 let empty (ctx: HttpContext) = ctx.Response.CompleteAsync ()
-let emptyWith ctx statusCode =
+let emptyWith statusCode ctx =
     setStatusCode ctx statusCode
     empty ctx
 
-let noContent ctx = emptyWith ctx StatusCodes.Status204NoContent
-let notFound  ctx = emptyWith ctx StatusCodes.Status404NotFound
-let accepted  ctx = emptyWith ctx StatusCodes.Status202Accepted
-let conflict  ctx = emptyWith ctx StatusCodes.Status409Conflict
+let noContent ctx = emptyWith StatusCodes.Status204NoContent ctx
+let notFound  ctx = emptyWith StatusCodes.Status404NotFound  ctx
+let accepted  ctx = emptyWith StatusCodes.Status202Accepted  ctx
+let conflict  ctx = emptyWith StatusCodes.Status409Conflict  ctx
 
-let created ctx uri =
+let created uri ctx =
     setLocation ctx uri
-    emptyWith ctx StatusCodes.Status201Created
-let createdWith<'T> ctx uri value =
+    emptyWith StatusCodes.Status201Created ctx
+let createdWith<'T> uri value ctx =
     setLocation ctx uri
     setStatusCode ctx StatusCodes.Status201Created
     writeAsJsonTo ctx value
 
-let writeProblemDetails ctx (problem: ProblemDetails) =
-    let status = problem.Status |> Option.defaultValue StatusCodes.Status500InternalServerError
-    setStatusCode ctx status
-    writeAsJsonTo ctx problem
+let writeProblemDetails prob ctx =
+    setStatusCode ctx (ProblemDetails.statusOrDefaultOf prob)
+    writeAsJsonTo ctx prob
 
 [<RequireQualifiedAccess>]
 module RouteValue =
