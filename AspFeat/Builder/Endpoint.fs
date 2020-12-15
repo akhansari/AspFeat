@@ -6,16 +6,16 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Routing
 open Microsoft.Extensions.DependencyInjection
 
-let private addApi (services: IServiceCollection) =
+let private addServices (services: IServiceCollection) =
     services
         .AddResponseCompression()
         .AddRouting()
 
-let private useApi configureEndpoints (app: IApplicationBuilder) =
+let private useMiddlewares configureEndpoints (app: IApplicationBuilder) =
     app
         .UseResponseCompression()
         .UseRouting()
         .UseEndpoints(Action<IEndpointRouteBuilder> configureEndpoints)
 
 let feat configureEndpoints =
-    (addApi, useApi configureEndpoints)
+    (addServices, useMiddlewares configureEndpoints)

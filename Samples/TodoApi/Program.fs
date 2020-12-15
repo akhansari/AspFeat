@@ -1,4 +1,4 @@
-module WebApi.Program
+module TodoApi.Program
 
 open System
 open AspFeat.Builder
