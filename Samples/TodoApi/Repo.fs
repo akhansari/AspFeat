@@ -1,4 +1,4 @@
-﻿namespace WebApi
+﻿namespace TodoApi
 
 open System.Collections.Concurrent
 open System.Threading

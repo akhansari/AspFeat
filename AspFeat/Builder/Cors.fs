@@ -6,10 +6,10 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.Extensions.DependencyInjection
 
-let private addCors (services: IServiceCollection) =
+let private addServices (services: IServiceCollection) =
     services.AddCors ()
 
-let private useCors configurePolicy (app: IApplicationBuilder) =
+let private useMiddlewares configurePolicy (app: IApplicationBuilder) =
     app.UseCors(Action<CorsPolicyBuilder> configurePolicy)
 
 let allowAny (builder: CorsPolicyBuilder) =
@@ -20,4 +20,4 @@ let allowAny (builder: CorsPolicyBuilder) =
     |> ignore
 
 let feat configurePolicy =
-    (addCors, useCors configurePolicy)
+    (addServices, useMiddlewares configurePolicy)
