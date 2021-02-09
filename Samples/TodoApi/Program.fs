@@ -1,6 +1,8 @@
 module TodoApi.Program
 
 open System
+open System.Threading.Tasks
+open AspFeat
 open AspFeat.Builder
 open AspFeat.Endpoint
 open AspFeat.HttpContext
@@ -19,14 +21,20 @@ let getTodos ctx =
     |> writeAsJsonTo ctx
 
 let getTodo id ctx =
-    db.TryGet id
-    |> Option.map (writeAsJsonTo ctx)
-    |> Option.defaultWith (fun () -> notFound ctx)
+    match db.TryGet id with
+    | Some todo -> writeAsJson todo ctx
+    | None      -> notFound ctx
 
-let addTodo (model: {| Todo: string |}) ctx =
-    db.TryAdd ({ Todo = model.Todo; Completed = false })
-    |> Option.map (fun (id, todo) -> createdWith $"/{id}" todo ctx)
-    |> Option.defaultWith (fun () -> conflict ctx)
+let validateAddTodo (model: {| Todo: string |}) _ =
+    if String.IsNullOrWhiteSpace model.Todo
+    then Map [ ("todo", [ "Is empty" ]) ] |> Error
+    else Ok { Todo = model.Todo; Completed = false }
+    |> Task.FromResult
+
+let addTodo todo ctx =
+    match db.TryAdd todo with
+    | Some (id, todo) -> createdWith $"/{id}" todo ctx
+    | None            -> conflict ctx
 
 let updateTodo id (model: {| Todo: string option; Completed: bool option |}) ctx =
     let update old todo completed =
@@ -44,15 +52,15 @@ let updateTodo id (model: {| Todo: string option; Completed: bool option |}) ctx
     |> Option.defaultWith (fun () -> notFound ctx)
 
 let deleteTodo id ctx =
-    db.TryRemove id
-    |> Option.map (fun _ -> noContent ctx)
-    |> Option.defaultWith (fun () -> notFound ctx)
+    match db.TryRemove id with
+    | Some _ -> noContent ctx
+    | None   -> notFound ctx
 
 let configureEndpoints bld =
     http   bld Get    "/todos"          getTodos
     httpf  bld Get    "/todos/{id:int}" getTodo
     httpfj bld Put    "/todos/{id:int}" updateTodo
-    httpj  bld Post   "/todos"          addTodo
+    httpj  bld Post   "/todos"          (validateAddTodo =| addTodo)
     httpf  bld Delete "/todos/{id:int}" deleteTodo
 
 [<EntryPoint>]

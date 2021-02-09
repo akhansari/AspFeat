@@ -16,6 +16,7 @@ type MapHttpMethod =
     | Delete
 
 type HttpHandler = HttpContext -> Task
+type ResultHttpHandler<'T,'TError> = HttpContext -> Task<Result<'T,'TError>>
 
 let mapHttp (bld: IEndpointRouteBuilder) (method: MapHttpMethod) pattern handler =
     bld.MapMethods(pattern, [ string method ], RequestDelegate handler)
@@ -55,3 +56,35 @@ let httpfj bld method pattern (handler: 'RouteValues -> 'JsonContent -> HttpHand
                 do! HttpContext.writeProblemDetails prob ctx
         }
     http bld method pattern wrapper
+
+let private writeError errors =
+    HttpContext.writeValidationError (ProblemDetails.validation errors)
+
+let combineHandler (handler1: HttpHandler) (handler2: HttpHandler) ctx =
+    unitTask {
+        do! handler1 ctx
+        if not ctx.Response.HasStarted then
+            do! handler2 ctx
+    }
+
+let combineHandler1 (lifter: 'T -> ResultHttpHandler<_,_>) (handler: 'U -> HttpHandler) model ctx =
+    unitTask {
+        let! res = lifter model ctx
+        match (ctx.Response.HasStarted, res) with
+        | true , _            -> ()
+        | false, Ok    mapped -> do! handler    mapped ctx
+        | false, Error errors -> do! writeError errors ctx
+    }
+
+let combineHandler2 (lifter: 'T1 -> 'T2 -> ResultHttpHandler<_,_>) (handler: 'U1 -> 'U2 -> HttpHandler) model1 model2 ctx =
+    unitTask {
+        let! res = lifter model1 model2 ctx
+        match (ctx.Response.HasStarted, res) with
+        | true , _                     -> ()
+        | false, Ok (mapped1, mapped2) -> do! handler mapped1 mapped2 ctx
+        | false, Error errors          -> do! writeError errors ctx
+    }
+
+let (=>)  = combineHandler
+let (=|)  = combineHandler1
+let (=||) = combineHandler2
