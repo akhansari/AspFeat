@@ -4,6 +4,7 @@ open System
 open System.Text.Json
 open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Mvc
 
 let setStatusCode (ctx: HttpContext) statusCode =
     ctx.Response.StatusCode <- statusCode
@@ -33,15 +34,17 @@ let writeTo ctx text = write text ctx
 let writeAsJson<'T> (value: 'T) (ctx: HttpContext) = ctx.Response.WriteAsJsonAsync<'T> value
 let writeAsJsonTo<'T> ctx (value: 'T) = writeAsJson<'T> value ctx
 
-let empty (ctx: HttpContext) = ctx.Response.CompleteAsync ()
+let empty (ctx: HttpContext) = ctx.Response.StartAsync ()
 let emptyWith statusCode ctx =
     setStatusCode ctx statusCode
     empty ctx
 
-let noContent ctx = emptyWith StatusCodes.Status204NoContent ctx
-let notFound  ctx = emptyWith StatusCodes.Status404NotFound  ctx
-let accepted  ctx = emptyWith StatusCodes.Status202Accepted  ctx
-let conflict  ctx = emptyWith StatusCodes.Status409Conflict  ctx
+let noContent    ctx = emptyWith StatusCodes.Status204NoContent    ctx
+let notFound     ctx = emptyWith StatusCodes.Status404NotFound     ctx
+let accepted     ctx = emptyWith StatusCodes.Status202Accepted     ctx
+let conflict     ctx = emptyWith StatusCodes.Status409Conflict     ctx
+let forbidden    ctx = emptyWith StatusCodes.Status403Forbidden    ctx
+let unauthorized ctx = emptyWith StatusCodes.Status401Unauthorized ctx
 
 let created uri ctx =
     setLocation ctx uri
@@ -53,6 +56,9 @@ let createdWith<'T> uri value ctx =
 
 let writeProblemDetails prob ctx =
     setStatusCode ctx (ProblemDetails.statusOrDefaultOf prob)
+    writeAsJsonTo ctx prob
+let writeValidationError (prob: ValidationProblemDetails) ctx =
+    setStatusCode ctx StatusCodes.Status422UnprocessableEntity
     writeAsJsonTo ctx prob
 
 [<RequireQualifiedAccess>]

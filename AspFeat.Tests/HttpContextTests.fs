@@ -9,7 +9,6 @@ open AspFeat.Builder
 open AspFeat.Endpoint
 open AspFeat.HttpContext
 
-[<Literal>]
 let echo = "echo"
 
 [<Fact>]

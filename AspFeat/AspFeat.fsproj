@@ -1,5 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <PackageId>AspFeat</PackageId>
+    <Authors>Amin Khansari</Authors>
+    <Version>0.1.0</Version>
+    <RepositoryUrl>https://github.com/akhansari/AspFeat</RepositoryUrl>
+    <PackageDescription>A modular and low ceremony toolkit for ASP.Net Core and F#.</PackageDescription>
+    <PackageTags>fsharp, aspnetcore</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="ProblemDetails.fs" />
     <Compile Include="JsonSerializer.fs" />
@@ -14,7 +25,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="FSharp.SystemTextJson" Version="0.15.14" />
+    <PackageReference Include="FSharp.SystemTextJson" Version="0.16.6" />
     <PackageReference Include="Ply" Version="0.3.1" />
   </ItemGroup>
 
