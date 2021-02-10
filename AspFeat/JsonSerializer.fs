@@ -12,7 +12,6 @@ let setupDefaultOptions (opt: JsonSerializerOptions) =
             JsonUnionEncoding.FSharpLuLike,
             unionTagCaseInsensitive = true,
             unionTagNamingPolicy = JsonNamingPolicy.CamelCase))
-    opt.IgnoreNullValues <- true
     opt
 
 let createDefaultOptions () =

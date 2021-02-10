@@ -7,9 +7,11 @@ A modular and low ceremony toolkit for ASP.Net Core and F#.
 - Functional helpers over ASP.Net Core and nothing else.
 - Focused on Web APIs.
 
+You can find examples in the samples folder.
+
 ## Startup
 
-In order to setup a feature properly, it's necessary to first add the services to `IServiceCollection` and then use the middlewares with `IApplicationBuilder`. The downside is that they are mixed with other features and moreover the order of calls are important, which makes everything complicated.
+In order to setup a feature properly, it's necessary to first add the [services](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection) to `IServiceCollection` and then use the [middlewares](https://docs.microsoft.com/aspnet/core/fundamentals/middleware/) with `IApplicationBuilder`. The downside is that they are mixed with other features and moreover the order of calls are important, which makes everything complicated.
 
 To keep the startup clean, the idea is to package features into modules and then expose the service collection and the application builder as a tuple.
 
@@ -44,6 +46,8 @@ AspFeat comes with several helpers that ease the use of the functional programmi
 We do not intend to completely change your way of using ASP.NET but rather to offer a more nice and more F#-idiomatic way of using ASP.NET.\
 So you are not limited to AspFeat and you can still use Vanilla ASP.NET, if you need to.
 
+For further information please refer to [Microsoft Docs](https://docs.microsoft.com/aspnet/core/fundamentals/routing)
+
 ### Example
 
 **Without** AspFeat toolkit:
@@ -62,7 +66,7 @@ let configureEndpoints bld =
 
 Instead of manually fetching data through `HttpContext`, it is possible to inject them into the handler.
 
-- `httpf` injects route parameter values.
+- `httpf` injects route values.
   - A single value is injected as is.
   - Multiple values are injected _in order_ as a tuple.
 - `httpj` injects the deserialized JSON content.
@@ -80,13 +84,18 @@ let configureEndpoints bld =
     httpfj bld Put  "/goodbye/{firstname}/{lastname}" goodbye
 ```
 
-You can find more examples in the samples folder.
+## Http Handlers
 
-### Handler Composition
+### Composition
 
 It is possible to combine http handlers.
 
-Normal with `=>`
+Those with input injection are railwayed with `Result`.
+- `Ok` type can be any value.
+- `Error` type is `Map<string, string list>` and the error response is a json of problem details with the status code 422 Unprocessable Entity.
+
+#### Normal with `=>`
+
 ```fsharp
 let enrich (ctx: HttpContext) =
     ctx.Response.GetTypedHeaders().Set("X-Powered-By", "AspFeat")
@@ -96,14 +105,13 @@ let configureEndpoints bld =
     http bld Get "/" (enrich => write "hello world")
 ```
 
-Those with input injection are railwayed with `Result`.\
-Then the `Error` type is `Map<string, string list>` and the response is a json of problem details with the status code 422 Unprocessable Entity.
+#### Single value injection with `=|`
 
-Single value injection with `=|`
-- `Ok` type could be:
-  - A route parameter
-  - A tuple of route parameters
+`Ok` type could be:
+  - A route value
+  - A tuple of route values
   - A deserialized JSON model
+  - Or any mapped value
 
 ```fsharp
 let validateGetEcho id ctx =
@@ -112,16 +120,19 @@ let validateGetEcho id ctx =
     else Map [ ("Id", [ "Is negative or zero" ]) ] |> Error
     |> Task.FromResult
 
-let getEcho id = write $"Echo {id}"
+let getEcho id =
+    write $"Echo {id}"
 
 let configureEndpoints bld =
-    httpf  bld Get  "/{id:int}" (validateGetEcho =|  getEcho)
+    httpf  bld Get  "/{id:int}" (validateGetEcho =| getEcho)
 ```
 
-Multiple values injection with `=||`
-- `Ok` type is a tuple of two values:
-  1. A route parameter or a tuple of route parameters
-  1. Deserialized JSON model
+#### Double value injection with `=||`
+
+`Ok` type is a two-value tuple that is then passed to the next function as two parameters.\
+It could be:
+  1. Fist, route values
+  2. Second, deserialized JSON model
 
 ```fsharp
 let validateCreateEcho id name ctx =
@@ -130,7 +141,8 @@ let validateCreateEcho id name ctx =
     else Map [ ("Name", [ "Is empty" ]) ] |> Error
     |> Task.FromResult
 
-let createEcho id model = createdWith $"/{id}" model
+let createEcho id model =
+    createdWith $"/{id}" model
 
 let configureEndpoints bld =
     httpfj bld Post "/{id:int}" (validateCreateEcho =|| createEcho)

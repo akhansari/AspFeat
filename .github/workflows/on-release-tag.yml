@@ -30,7 +30,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
-        run: dotnet build --configuration Release --no-restore -p:Version=${{env.TAG_VERSION}} ${{env.FSPROJ_PATH}}
+        run: dotnet build --configuration Release --no-restore --include-symbols --include-source -p:Version=${{env.TAG_VERSION}} ${{env.FSPROJ_PATH}}
       - name: Generate NuGet package
         run: dotnet pack --configuration Release --no-build --no-restore -p:PackageVersion=${{env.TAG_VERSION}} ${{env.FSPROJ_PATH}} --output ${{env.PUBLISH_PATH}}
       - name: Get NuGet package path
