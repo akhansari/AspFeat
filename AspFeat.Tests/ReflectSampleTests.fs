@@ -54,22 +54,34 @@ let ``Tuple`` () = makeSample<(int32 * decimal)> () =! (0, 0m)
 
 type EmptyUnion = EmptyUnion
 [<Fact>]
-let ``empty Union`` () = makeSample<EmptyUnion> () =! EmptyUnion
+let ``empty union`` () = makeSample<EmptyUnion> () =! EmptyUnion
 
 type ValueUnion = ValueUnion of int32
 [<Fact>]
-let ``value Union`` () = makeSample<ValueUnion> () =! ValueUnion 0
+let ``value union`` () = makeSample<ValueUnion> () =! ValueUnion 0
 
 type GenericUnion<'T> = GenericUnion of 'T
 [<Fact>]
-let ``generic Union`` () = makeSample<GenericUnion<int32>> () =! GenericUnion 0
+let ``generic union`` () = makeSample<GenericUnion<int32>> () =! GenericUnion 0
 
 type SimpleRecord = { Id: int32 }
 [<Fact>]
-let ``simple Record`` () =
+let ``simple record`` () =
     makeSample<SimpleRecord> () =! { Id = 0 }
 
 type GenericRecord<'T> = { Id: 'T; Name: string }
 [<Fact>]
-let ``generic Record`` () =
+let ``generic record`` () =
     makeSample<GenericRecord<int32>> () =! { Id = 0; Name = "string" }
+
+type SelfRefRecord = { Id: int32; Parent: SelfRefRecord option }
+[<Fact>]
+let ``self reference record with option should repeat once`` () =
+    makeSample<SelfRefRecord> ()
+    =! { Id = 0; Parent = Some { Id = 0; Parent = None } }
+
+type SelfRefUnion = | Level1 of SelfRefUnion | Level2 of SelfRefUnion | LevelEnd
+[<Fact>]
+let ``self reference union should iterate`` () =
+    makeSample<SelfRefUnion> ()
+    =! (LevelEnd |> Level2 |> Level1)

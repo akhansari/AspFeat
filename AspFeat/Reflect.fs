@@ -41,20 +41,17 @@ let createTupleMaker<'T> elemNames =
         |> unbox<'T>
 
 
-let private isOption (t: Type) =
-    FSharpType.IsUnion t 
-    && t.IsGenericType
-    && t.GetGenericTypeDefinition () = typedefof<Option<_>>
+let rec private defaultValueOf depth (t: Type) =
 
-let private isResult (t: Type) =
-    FSharpType.IsUnion t 
-    && t.IsGenericType
-    && t.GetGenericTypeDefinition () = typedefof<Result<_,_>>
-
-let rec private defaultValueOf t : obj =
+    let getDepth () = Map.tryFind t.GUID depth |> defaultArg <| 0
+    let incrDepth () =
+        match Map.tryFind t.GUID depth with
+        | Some l -> Map.add t.GUID (l + 1) depth
+        | None   -> Map.add t.GUID 1 depth
 
     let makeUnion (uc: UnionCaseInfo) =
-        let values = uc.GetFields () |> Array.map (fun p -> defaultValueOf p.PropertyType)
+        let d = incrDepth ()
+        let values = uc.GetFields () |> Array.map (fun p -> defaultValueOf d p.PropertyType)
         FSharpValue.MakeUnion (uc, values)
     let findUnionCase name =
         FSharpType.GetUnionCases t |> Array.find (fun u -> u.Name = name)
@@ -79,23 +76,26 @@ let rec private defaultValueOf t : obj =
     elif t = typeof<DateTime>       then box DateTime.MinValue
     elif t = typeof<DateTimeOffset> then box DateTimeOffset.MinValue
 
-    elif isOption t then findUnionCase "Some" |> makeUnion
-    elif isResult t then findUnionCase "Ok"   |> makeUnion
-
     elif FSharpType.IsUnion t then
-        FSharpType.GetUnionCases t |> Array.head |> makeUnion
+        if t.IsGenericType && typedefof<Option<_>> = t.GetGenericTypeDefinition () then
+            if getDepth () < 1
+            then findUnionCase "Some" |> makeUnion
+            else findUnionCase "None" |> makeUnion
+        else
+            let ucs = FSharpType.GetUnionCases t
+            makeUnion ucs.[getDepth ()]
 
     elif FSharpType.IsTuple t then
-        FSharpValue.MakeTuple (Array.map defaultValueOf t.GenericTypeArguments, t)
+        FSharpValue.MakeTuple (Array.map (defaultValueOf depth) t.GenericTypeArguments, t)
 
     elif FSharpType.IsRecord t then
         let values =
             FSharpType.GetRecordFields t
-            |> Array.map (fun p -> defaultValueOf p.PropertyType)
+            |> Array.map (fun p -> defaultValueOf depth p.PropertyType)
         FSharpValue.MakeRecord (t, values)
 
     else
         NotImplementedException t.FullName |> raise
 
 let makeSample<'T> () =
-    defaultValueOf typeof<'T> |> unbox<'T>
+    defaultValueOf Map.empty typeof<'T> |> unbox<'T>
