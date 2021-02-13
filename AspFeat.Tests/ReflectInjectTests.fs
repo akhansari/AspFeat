@@ -1,10 +1,12 @@
-﻿module Reflect
+﻿module ReflectInject
 
 open System
+open Xunit
 open FsCheck
 open FsCheck.Xunit
 open Swensen.Unquote
 open AspFeat.Reflect
+
 
 [<Property>]
 let ``should get int32 inject value`` echo =
@@ -47,4 +49,5 @@ let ``should get guid inject value`` echo =
 [<Property>]
 let ``should get tuple2 inject value`` echo1 echo2 =
     let m = Map [ ("p1", box echo1); ("p2", box echo2) ]
-    createTupleMaker<Guid * int32> [|"p1";"p2"|] (fun name -> string m.[name]) =! (echo1, echo2)
+    createTupleMaker<Guid * int32> [|"p1";"p2"|] (fun name -> string m.[name])
+    =! (echo1, echo2)
