@@ -3,18 +3,22 @@
 open System
 open Microsoft.FSharp.Reflection
 
+let private parsers =
+    [ (typeof<int32>         , int32                >> box)
+      (typeof<int64>         , int64                >> box)
+      (typeof<decimal>       , decimal              >> box)
+      (typeof<float>         , float                >> box)
+      (typeof<float32>       , float32              >> box)
+      (typeof<bool>          , bool.Parse           >> box)
+      (typeof<DateTime>      , DateTime.Parse       >> box)
+      (typeof<DateTimeOffset>, DateTimeOffset.Parse >> box)
+      (typeof<Guid>          , Guid.Parse           >> box) ]
+    |> readOnlyDict
 
-let private parserOf = function
-    | t when t = typeof<int32>          -> int32                >> box
-    | t when t = typeof<int64>          -> int64                >> box
-    | t when t = typeof<decimal>        -> decimal              >> box
-    | t when t = typeof<float>          -> float                >> box
-    | t when t = typeof<float32>        -> float32              >> box
-    | t when t = typeof<bool>           -> bool.Parse           >> box
-    | t when t = typeof<DateTime>       -> DateTime.Parse       >> box
-    | t when t = typeof<DateTimeOffset> -> DateTimeOffset.Parse >> box
-    | t when t = typeof<Guid>           -> Guid.Parse           >> box
-    | _                                 -> string               >> box
+let private parserOf t =
+    match parsers.TryGetValue t with
+    | true, parser -> parser
+    | _            -> string >> box
 
 let private makeTuple tupleType values = FSharpValue.MakeTuple (values, tupleType)
 
@@ -41,6 +45,27 @@ let createTupleMaker<'T> elemNames =
         |> unbox<'T>
 
 
+let private defaultValues =
+    [ (typeof<unit>          , box ()      )
+      (typeof<string>        , box "string")
+      (typeof<char>          , box 'c'     )
+      (typeof<bool>          , box false   )
+      (typeof<byte>          , box 0uy     )
+      (typeof<sbyte>         , box 0y      )
+      (typeof<int16>         , box 0s      )
+      (typeof<uint16>        , box 0us     )
+      (typeof<int32>         , box 0       )
+      (typeof<uint32>        , box 0u      )
+      (typeof<int64>         , box 0L      )
+      (typeof<uint64>        , box 0UL     )
+      (typeof<decimal>       , box 0m      )
+      (typeof<float>         , box 0.0     )
+      (typeof<float32>       , box 0f      )
+      (typeof<Guid>          , box Guid.Empty             )
+      (typeof<DateTime>      , box DateTime.MinValue      )
+      (typeof<DateTimeOffset>, box DateTimeOffset.MinValue) ]
+    |> readOnlyDict
+
 let rec private defaultValueOf depth (t: Type) =
 
     let getDepth () = Map.tryFind t.GUID depth |> defaultArg <| 0
@@ -56,25 +81,8 @@ let rec private defaultValueOf depth (t: Type) =
     let findUnionCase name =
         FSharpType.GetUnionCases t |> Array.find (fun u -> u.Name = name)
 
-    if   t = typeof<unit>    then box ()
-    elif t = typeof<string>  then box "string"
-    elif t = typeof<char>    then box 'c'
-    elif t = typeof<bool>    then box false
-    elif t = typeof<byte>    then box 0uy
-    elif t = typeof<sbyte>   then box 0y
-    elif t = typeof<int16>   then box 0s
-    elif t = typeof<uint16>  then box 0us
-    elif t = typeof<int32>   then box 0
-    elif t = typeof<uint32>  then box 0u
-    elif t = typeof<int64>   then box 0L
-    elif t = typeof<uint64>  then box 0UL
-    elif t = typeof<decimal> then box 0m
-    elif t = typeof<float>   then box 0.0
-    elif t = typeof<float32> then box 0f
-
-    elif t = typeof<Guid>           then box Guid.Empty
-    elif t = typeof<DateTime>       then box DateTime.MinValue
-    elif t = typeof<DateTimeOffset> then box DateTimeOffset.MinValue
+    if  defaultValues.ContainsKey t then
+        defaultValues.[t]
 
     elif FSharpType.IsUnion t then
         if t.IsGenericType && typedefof<Option<_>> = t.GetGenericTypeDefinition () then
