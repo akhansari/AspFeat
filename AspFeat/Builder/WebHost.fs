@@ -1,6 +1,5 @@
 ﻿namespace AspFeat.Builder
 
-open System
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http.Json
@@ -15,40 +14,40 @@ type Feat =
 [<RequireQualifiedAccess>]
 module WebHost =
 
-    let create
-        (extendWebHost: IWebHostBuilder -> IWebHostBuilder)
-        (feats: Feat list)
-        =
+    let private configureServices feats
+        (_: WebHostBuilderContext) (services: IServiceCollection) =
 
-        let configureServices (_: WebHostBuilderContext) (services: IServiceCollection) =
+        services.Configure(fun (o: JsonOptions) ->
+            JsonSerializer.setupDefaultOptions o.SerializerOptions |> ignore)
+        |> ignore
 
-            services.Configure(fun (o: JsonOptions) ->
-                JsonSerializer.setupDefaultOptions o.SerializerOptions |> ignore)
-            |> ignore
+        for (setup, _) in feats do
+            setup services |> ignore
 
-            for (setup, _) in feats do
-                setup services |> ignore
+    let private configureApp feats
+        (context: WebHostBuilderContext) (app: IApplicationBuilder) =
 
-        let configureApp (context: WebHostBuilderContext) (app: IApplicationBuilder) =
+        if context.HostingEnvironment.IsDevelopment () then
+            app.UseDeveloperExceptionPage () |> ignore
 
-            if context.HostingEnvironment.IsDevelopment () then
-                app.UseDeveloperExceptionPage () |> ignore
+        for (_, setup) in feats do
+            setup app |> ignore
 
-            for (_, setup) in feats do
-                setup app |> ignore
+    let configure (feats: Feat list) (builder: IWebHostBuilder) =
+        builder
+            .ConfigureServices(configureServices feats)
+            .Configure(configureApp feats)
 
-        let configureWebHost (builder: IWebHostBuilder) =
-            builder
-                .UseKestrel()
-                .ConfigureServices(configureServices)
-                .Configure(configureApp)
-            |> extendWebHost
-            |> ignore
-
+    let create (extend: IWebHostBuilder -> IWebHostBuilder) feats =
         HostBuilder()
-            .ConfigureWebHost(Action<IWebHostBuilder> configureWebHost)
+            .ConfigureWebHost(fun builder ->
+                builder
+                |> extend
+                |> configure feats
+                |> ignore)
 
     let run feats =
-        create id feats
+        feats
+        |> create (fun b -> b.UseKestrel())
         |> Host.addConsole
         |> Host.run
