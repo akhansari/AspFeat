@@ -13,7 +13,7 @@ let ``should get int32 inject value`` echo =
 [<Property>]
 let ``should get int64 inject value`` echo =
     createTupleMaker<int64> [|"id"|] (fun _ -> string echo) =! echo
-    
+
 [<Property>]
 let ``should get decimal inject value`` echo =
     createTupleMaker<decimal> [|"id"|] (fun _ -> string echo) =! echo
