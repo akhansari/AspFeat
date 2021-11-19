@@ -1,11 +1,20 @@
 module TodoApi.Program
 
 open System
-open System.Threading.Tasks
 open AspFeat
 open AspFeat.Builder
 open AspFeat.Endpoint
 open AspFeat.HttpContext
+open Microsoft.AspNetCore.Mvc
+open Microsoft.AspNetCore.Http
+
+type TodoAddModel =
+    { Todo: string }
+
+[<NoComparison>]
+type TodoUpdateModel =
+    { Todo: string
+      Completed: Nullable<bool> }
 
 type Todo =
     { Todo: string
@@ -25,44 +34,69 @@ let getTodo id ctx =
     | Some todo -> writeAsJson todo ctx
     | None      -> notFound ctx
 
-let validateAddTodo (model: {| Todo: string |}) _ =
-    if String.IsNullOrWhiteSpace model.Todo
-    then Map [ ("todo", [ "Is empty" ]) ] |> Error
-    else Ok { Todo = model.Todo; Completed = false }
-    |> Task.FromResult
+let validateAddTodo (model: TodoAddModel) _ =
+    task {
+        if String.IsNullOrWhiteSpace model.Todo |> not
+        then return { Todo = model.Todo; Completed = false } |> Ok
+        else return Map [ ("todo", [ "Is empty" ]) ] |> Error
+    }
 
 let addTodo todo ctx =
     match db.TryAdd todo with
     | Some (id, todo) -> createdWith $"/{id}" todo ctx
     | None            -> conflict ctx
 
-let updateTodo id (model: {| Todo: string option; Completed: bool option |}) ctx =
-    let update old todo completed =
-        match (todo, completed) with
+let updateTodo id (model: TodoUpdateModel) ctx =
+    let mergeWith old : Todo =
+        match (Option.ofObj model.Todo, Option.ofNullable model.Completed) with
         | Some todo, Some completed -> { old with Todo = todo; Completed = completed }
         | Some todo, None           -> { old with Todo = todo }
         | None, Some completed      -> { old with Completed = completed }
         | None, None                ->   old
-    db.TryGet id
-    |> Option.map (fun old ->
-        update old model.Todo model.Completed
-        |> db.TryUpdate id old
-        |> Option.map (writeAsJsonTo ctx)
-        |> Option.defaultWith (fun () -> conflict ctx))
-    |> Option.defaultWith (fun () -> notFound ctx)
+    match db.TryGet id with
+    | Some old ->
+        match db.TryUpdate id old (mergeWith old) with
+        | Some todo -> writeAsJson todo ctx
+        | None      -> conflict ctx
+    | None -> notFound ctx
 
 let deleteTodo id ctx =
     match db.TryRemove id with
     | Some _ -> noContent ctx
     | None   -> notFound ctx
 
+type Todos =
+    abstract member GetTodos: unit -> Map<int32, Todo>
+
+    [<ProducesResponseType(typeof<Todo>, StatusCodes.Status200OK)>]
+    [<ProducesResponseType(StatusCodes.Status404NotFound)>]
+    abstract member GetTodo: id: int32 -> unit
+
+    [<ProducesResponseType(StatusCodes.Status201Created)>]
+    [<ProducesResponseType(StatusCodes.Status409Conflict)>]
+    abstract member AddTodo: model: TodoAddModel -> unit
+
+    [<ProducesResponseType(typeof<Todo>, StatusCodes.Status200OK)>]
+    [<ProducesResponseType(StatusCodes.Status404NotFound)>]
+    [<ProducesResponseType(StatusCodes.Status409Conflict)>]
+    abstract member UpdateTodo: id: int32 -> model: TodoUpdateModel -> unit
+
+    [<ProducesResponseType(StatusCodes.Status204NoContent)>]
+    [<ProducesResponseType(StatusCodes.Status404NotFound)>]
+    abstract member DeleteTodo: id: int32 -> unit
+
 let configureEndpoints bld =
-    http   bld Get    "/todos"          getTodos
-    httpf  bld Get    "/todos/{id:int}" getTodo
-    httpfj bld Put    "/todos/{id:int}" updateTodo
-    httpj  bld Post   "/todos"          (validateAddTodo =| addTodo)
-    httpf  bld Delete "/todos/{id:int}" deleteTodo
+    endpointsMetadata<Todos> bld {
+        get    "/todos"            getTodos   (nameof getTodos)
+        get    "/todos/{id:int}"   getTodo    (nameof getTodo)
+        post   "/todos"            (validateAddTodo =| addTodo) (nameof addTodo)
+        put    "/todos/{id:int}"   updateTodo (nameof updateTodo)
+        delete "/todos/{id:int}"   deleteTodo (nameof deleteTodo)
+    }
+    |> ignore
 
 [<EntryPoint>]
-let main _ =
-    WebHost.run [ Endpoint.feat configureEndpoints ]
+let main args =
+    [ Endpoint.feat configureEndpoints
+      Swagger.feat () ]
+    |> WebApp.run args

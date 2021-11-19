@@ -1,10 +1,10 @@
-# AspFeat [![NuGet Status](http://img.shields.io/nuget/v/AspFeat.svg)](https://www.nuget.org/packages/AspFeat)
+# AspFeat [![NuGet Status](http://img.shields.io/nuget/v/AspFeat.svg)](https://www.nuget.org/packages/AspFeat) ![ASP.NET Core 6.0](https://img.shields.io/badge/ASP.NET%20Core-6.0-blue)
 
-A modular and low ceremony toolkit for ASP.Net Core and F#.
+A modular and low ceremony toolkit for ASP .Net and F#.
 
 - Modular injection of services and middlewares.
 - Set of low ceremony ready-to-use setups.
-- Functional helpers over ASP.Net Core and nothing else.
+- Functional helpers over ASP .Net and nothing else.
 - Focused on Web APIs.
 
 You can find examples in the samples folder.
@@ -13,38 +13,49 @@ You can find examples in the samples folder.
 
 In order to setup a feature properly, it's necessary to first add the [services](https://docs.microsoft.com/aspnet/core/fundamentals/dependency-injection) to `IServiceCollection` and then use the [middlewares](https://docs.microsoft.com/aspnet/core/fundamentals/middleware/) with `IApplicationBuilder`. The downside is that they are mixed with other features and moreover the order of calls are important, which makes everything complicated.
 
-To keep the startup clean, the idea is to package features into modules and then expose the service collection and the application builder as a tuple.
+To keep the startup clean, the idea is to package features into modules and then expose the setup of `WebApplicationBuilder` and `WebApplication` as a tuple.
 
-The end result is that ASP.Net core startup has never been so easy:
+The end result is that ASP .Net startup has never been so easy:
 
 ```fsharp
 [<EntryPoint>]
-let main _ =
-    let configure bld = http bld Get "/" (write "hello world")
-    WebHost.run [ Endpoint.feat configure ]
+let main args =
+    let configure bld = uhttp bld Get "/" (write "hello world")
+    WebApp.run args [ Endpoint.feat configure ]
 ```
 
-Bts Implementation:
+Swagger sample:
 
 ```fsharp
-module Endpoint
+module Swagger =
+    open Microsoft.AspNetCore.Builder
+    open Microsoft.Extensions.DependencyInjection
 
-let private addServices (services: IServiceCollection) =
-    services.AddRouting()
+    let feat () : Feat =
+        fun builder ->
+            builder.Services
+                .AddEndpointsApiExplorer()
+                .AddSwaggerGen()
+            |> ignore
+        ,
+        fun app ->
+            app
+                .UseSwagger()
+                .UseSwaggerUI()
+            |> ignore
 
-let private useMiddlewares configureEndpoints (app: IApplicationBuilder) =
-    app.UseRouting()
-       .UseEndpoints(Action<IEndpointRouteBuilder> configureEndpoints)
-
-let feat configureEndpoints =
-    (addServices, useMiddlewares configureEndpoints)
+[<EntryPoint>]
+let main args =
+    [ Endpoint.feat configureEndpoints
+      Swagger.feat () ]
+    |> WebApp.run args
 ```
 
 ## Endpoint Routing
 
 AspFeat comes with several helpers that ease the use of the functional programming paradigm.\
-We do not intend to completely change your way of using ASP.NET but rather to offer a more nice and more F#-idiomatic way of using ASP.NET.\
-So you are not limited to AspFeat and you can still use Vanilla ASP.NET, if you need to.
+We do not intend to completely change your way of using ASP .Net but rather to offer a more nice and more F#-idiomatic way of using ASP .Net.\
+So you are not limited to AspFeat and you can still use Vanilla ASP .Net, if you need to.
 
 For further information please refer to [Microsoft Docs](https://docs.microsoft.com/aspnet/core/fundamentals/routing)
 
@@ -59,18 +70,43 @@ let configureEndpoints (bld: IEndpointRouteBuilder) =
 **With** AspFeat toolkit:
 ```fsharp
 let configureEndpoints bld =
-    http bld Get "/" getHandler
+    uhttp bld Get "/" getHandler
+```
+
+With the DSL:
+```fsharp
+let configureEndpoints bld =
+    endpoints bld {
+        get "/" getHandler
+    }
+    |> ignore
+```
+
+With the OpenApi/Swagger DSL:
+```fsharp
+let getHandler =
+    writeAsJson "hello world"
+
+type World =
+    [<ProducesResponseType(StatusCodes.Status200OK)>]
+    abstract member GetHandler: unit -> string
+
+let configureEndpoints bld =
+    endpointsMetadata<World> bld {
+        get "/" getHandler (nameof getHandler)
+    }
+    |> ignore
 ```
 
 ### Route values and JSON content injection
 
 Instead of manually fetching data through `HttpContext`, it is possible to inject them into the handler.
 
-- `httpf` injects route values.
+- `httpf` / `uhttpf` injects route values.
   - A single value is injected as is.
   - Multiple values are injected _in order_ as a tuple.
-- `httpj` injects the deserialized JSON content.
-- `httpfj` combines both.
+- `httpj` / `uhttpj` injects the deserialized JSON content.
+- `httpfj` / `uhttpfj` combines both.
 
 ```fsharp
 let hello firstname = write $"Hello {firstname}"
@@ -79,9 +115,9 @@ let goodbye (firstname, lastname) gift =
     write $"Goodbye {firstname} {lastname} and here is your {gift}"
 
 let configureEndpoints bld =
-    httpf  bld Get  "/hello/{firstname}" hello
-    httpj  bld Post "/gift" createGift
-    httpfj bld Put  "/goodbye/{firstname}/{lastname}" goodbye
+    uhttpf  bld Get  "/hello/{firstname}" hello
+    uhttpj  bld Post "/gift" createGift
+    uhttpfj bld Put  "/goodbye/{firstname}/{lastname}" goodbye
 ```
 
 ## Http Handlers
@@ -102,7 +138,7 @@ let enrich (ctx: HttpContext) =
     Task.CompletedTask
 
 let configureEndpoints bld =
-    http bld Get "/" (enrich => write "hello world")
+    uhttp bld Get "/" (enrich => write "hello world")
 ```
 
 #### Single value injection with `=|`
@@ -124,7 +160,7 @@ let getEcho id =
     write $"Echo {id}"
 
 let configureEndpoints bld =
-    httpf  bld Get  "/{id:int}" (validateGetEcho =| getEcho)
+    uhttpf bld Get  "/{id:int}" (validateGetEcho =| getEcho)
 ```
 
 #### Double value injection with `=||`
@@ -142,8 +178,9 @@ let validateCreateEcho id name ctx =
     |> Task.FromResult
 
 let createEcho id model =
+    //...
     createdWith $"/{id}" model
 
 let configureEndpoints bld =
-    httpfj bld Post "/{id:int}" (validateCreateEcho =|| createEcho)
+    uhttpfj bld Post "/{id:int}" (validateCreateEcho =|| createEcho)
 ```

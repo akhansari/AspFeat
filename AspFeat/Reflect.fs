@@ -1,4 +1,5 @@
-﻿module AspFeat.Reflect
+﻿module internal AspFeat.Reflect
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AspFeat.Tests")>] do ()
 
 open System
 open Microsoft.FSharp.Reflection
@@ -38,3 +39,4 @@ let createTupleMaker<'T> elemNames =
         |> Array.map (fun (name, parser) -> valueOf name |> parser)
         |> makeType
         |> unbox<'T>
+

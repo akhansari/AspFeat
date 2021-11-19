@@ -4,12 +4,9 @@ open System.Net
 open System.Net.Http.Json
 open System.Net.Http
 open System.Threading.Tasks
-
-open FSharp.Control.Tasks
 open Microsoft.AspNetCore.Http
 open Swensen.Unquote
 open Xunit
-
 open AspFeat.Builder
 open AspFeat.Endpoint
 open AspFeat.HttpContext
@@ -21,8 +18,8 @@ let techo = { Name = echo }
 
 [<Fact>]
 let ``should write text`` () =
-    unitTask {
-        let configure bld = http bld Get "/" (write echo)
+    task {
+        let configure bld = uhttp bld Get "/" (write echo)
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get "/")
@@ -31,8 +28,8 @@ let ``should write text`` () =
 
 [<Fact>]
 let ``should write json`` () =
-    unitTask {
-        let configure bld = http bld Get "/" (writeAsJson { Name = echo })
+    task {
+        let configure bld = uhttp bld Get "/" (writeAsJson { Name = echo })
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get "/")
@@ -42,8 +39,8 @@ let ``should write json`` () =
 
 [<Fact>]
 let ``should get single route value`` () =
-    unitTask {
-        let configure bld = httpf bld Get "/{p1}" write
+    task {
+        let configure bld = uhttpf bld Get "/{p1}" write
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get $"/{echo}")
@@ -53,9 +50,9 @@ let ``should get single route value`` () =
 
 [<Fact>]
 let ``should get tuple route values`` () =
-    unitTask {
+    task {
         let handler (p1, p2) = write $"{p2}: {p1}"
-        let configure bld = httpf bld Get "/{p1}/{p2:int}" handler
+        let configure bld = uhttpf bld Get "/{p1}/{p2:int}" handler
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get $"/{echo}/{necho}")
@@ -65,11 +62,11 @@ let ``should get tuple route values`` () =
 
 [<Fact>]
 let ``should get json content`` () =
-    unitTask {
+    task {
         let handler (model: Echo) ctx =
             model =! techo
             accepted ctx
-        let configure bld = httpj bld Post "/" handler
+        let configure bld = uhttpj bld Post "/" handler
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create techo :> HttpContent
@@ -80,9 +77,9 @@ let ``should get json content`` () =
 
 [<Fact>]
 let ``should send bad request if bad content type`` () =
-    unitTask {
+    task {
         let handler _ ctx = accepted ctx
-        let configure bld = httpj bld Post "/" handler
+        let configure bld = uhttpj bld Post "/" handler
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = new StringContent(echo) :> HttpContent
@@ -93,9 +90,9 @@ let ``should send bad request if bad content type`` () =
 
 [<Fact>]
 let ``should send bad request if bad json`` () =
-    unitTask {
+    task {
         let handler (_: Echo) ctx = accepted ctx
-        let configure bld = httpj bld Post "/" handler
+        let configure bld = uhttpj bld Post "/" handler
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create 500 :> HttpContent
@@ -106,12 +103,12 @@ let ``should send bad request if bad json`` () =
 
 [<Fact>]
 let ``should get route values and json content`` () =
-    unitTask {
+    task {
         let handler p1 (model: Echo) ctx =
             p1 =! necho
             model =! techo
             accepted ctx
-        let configure bld = httpfj bld Post "/{p1}" handler
+        let configure bld = uhttpfj bld Post "/{p1}" handler
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create techo :> HttpContent
@@ -122,11 +119,11 @@ let ``should get route values and json content`` () =
 
 [<Fact>]
 let ``should chain http handlers`` () =
-    unitTask {
+    task {
         let enrich (ctx: HttpContext) =
             ctx.Response.GetTypedHeaders().Set("foo", "bar")
             Task.CompletedTask
-        let configure bld = http bld Get "/" (enrich => write echo)
+        let configure bld = uhttp bld Get "/" (enrich => write echo)
 
         use! host = run [ Endpoint.feat configure ]
         let! res = request host (RequestMethod.Get $"/")
@@ -138,11 +135,11 @@ let ``should chain http handlers`` () =
 
 [<Fact>]
 let ``should break http handlers chaining if response already started`` () =
-    unitTask {
+    task {
         let enrich (ctx: HttpContext) =
             ctx.Response.StatusCode <- 206
             Task.CompletedTask
-        let configure bld = http bld Get "/" (enrich => write echo => write "foo")
+        let configure bld = uhttp bld Get "/" (enrich => write echo => write "foo")
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get $"/")
@@ -152,9 +149,9 @@ let ``should break http handlers chaining if response already started`` () =
 
 [<Fact>]
 let ``should chain single value http handlers`` () =
-    unitTask {
+    task {
         let validate p1 _ = Ok p1 |> Task.FromResult
-        let configure bld = httpf bld Get "/{p1}" (validate =| write)
+        let configure bld = uhttpf bld Get "/{p1}" (validate =| write)
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get $"/{echo}")
@@ -164,9 +161,9 @@ let ``should chain single value http handlers`` () =
 
 [<Fact>]
 let ``should break single value http handlers chaining on error`` () =
-    unitTask {
+    task {
         let validate _ _ = Error Map.empty |> Task.FromResult
-        let configure bld = httpf bld Get "/{p1}" (validate =| write)
+        let configure bld = uhttpf bld Get "/{p1}" (validate =| write)
 
         use! host = run [ Endpoint.feat configure ]
         let! res = request host (RequestMethod.Get $"/{necho}")
@@ -176,13 +173,13 @@ let ``should break single value http handlers chaining on error`` () =
 
 [<Fact>]
 let ``should break single value http handlerse chaining if response already started`` () =
-    unitTask {
+    task {
         let authenticate p1 ctx =
             task {
                 do! forbidden ctx
                 return Ok p1
             }
-        let configure bld = httpf bld Get "/{p1}" (authenticate =| write)
+        let configure bld = uhttpf bld Get "/{p1}" (authenticate =| write)
 
         use! host = run [ Endpoint.feat configure ]
         let! content = requestString host (RequestMethod.Get $"/{echo}")
@@ -192,10 +189,10 @@ let ``should break single value http handlerse chaining if response already star
 
 [<Fact>]
 let ``should chain double value http handlers`` () =
-    unitTask {
+    task {
         let validate p1 model _ = Ok (p1, model) |> Task.FromResult
         let handler _ _ = accepted
-        let configure bld = httpfj bld Post "/{p1}" (validate =|| handler)
+        let configure bld = uhttpfj bld Post "/{p1}" (validate =|| handler)
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create techo :> HttpContent
@@ -206,10 +203,10 @@ let ``should chain double value http handlers`` () =
 
 [<Fact>]
 let ``should break double value http handlers chaining on error`` () =
-    unitTask {
+    task {
         let validate _ _ _ = Error Map.empty |> Task.FromResult
         let handler _ _ = accepted
-        let configure bld = httpfj bld Post "/{p1}" (validate =|| handler)
+        let configure bld = uhttpfj bld Post "/{p1}" (validate =|| handler)
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create techo :> HttpContent
@@ -220,14 +217,14 @@ let ``should break double value http handlers chaining on error`` () =
 
 [<Fact>]
 let ``should break double value http handlers chaining if response already started`` () =
-    unitTask {
+    task {
         let authenticate p1 model ctx =
             task {
                 do! forbidden ctx
                 return Ok (p1, model)
             }
         let handler _ _ = accepted
-        let configure bld = httpfj bld Post "/{p1}" (authenticate =|| handler)
+        let configure bld = uhttpfj bld Post "/{p1}" (authenticate =|| handler)
 
         use! host = run [ Endpoint.feat configure ]
         use httpContent = JsonContent.Create techo :> HttpContent
