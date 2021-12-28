@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "AspFeatBench", "AspFeat\AspFeatBench.fsproj", "{1376FB92-0326-48F8-9805-A841FAF82E36}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Bomber", "Bomber\Bomber.fsproj", "{6C969CC2-545A-4FFD-83E7-D42E30E5065B}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "GiraffeBench", "Giraffe\GiraffeBench.fsproj", "{410F05FE-F566-4DD1-9E6D-502F983C9442}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1376FB92-0326-48F8-9805-A841FAF82E36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1376FB92-0326-48F8-9805-A841FAF82E36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1376FB92-0326-48F8-9805-A841FAF82E36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1376FB92-0326-48F8-9805-A841FAF82E36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C969CC2-545A-4FFD-83E7-D42E30E5065B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C969CC2-545A-4FFD-83E7-D42E30E5065B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C969CC2-545A-4FFD-83E7-D42E30E5065B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C969CC2-545A-4FFD-83E7-D42E30E5065B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{410F05FE-F566-4DD1-9E6D-502F983C9442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410F05FE-F566-4DD1-9E6D-502F983C9442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410F05FE-F566-4DD1-9E6D-502F983C9442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410F05FE-F566-4DD1-9E6D-502F983C9442}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {821893EB-9F0D-40DB-81D8-FF5C0BD1CCF9}
+	EndGlobalSection
+EndGlobal
