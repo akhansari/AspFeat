@@ -79,7 +79,6 @@ let configureEndpoints bld =
     endpoints bld {
         get "/" getHandler
     }
-    |> ignore
 ```
 
 With the OpenApi/Swagger DSL:
@@ -95,7 +94,6 @@ let configureEndpoints bld =
     endpointsMetadata<World> bld {
         get "/" getHandler (nameof getHandler)
     }
-    |> ignore
 ```
 
 ### Route values and JSON content injection
