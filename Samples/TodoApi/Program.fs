@@ -96,6 +96,7 @@ let configureEndpoints bld =
 
 [<EntryPoint>]
 let main args =
-    [ Endpoint.feat configureEndpoints
+    [ DefaultResponseCompression.feat ()
+      Endpoint.feat configureEndpoints
       Swagger.feat () ]
     |> WebApp.run args
