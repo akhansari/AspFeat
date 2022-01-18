@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+
+    <None Include="Views\_viewstart.liquid" />
+    <None Include="Views\_layout.liquid" />
+    <None Include="Views\component.liquid" />
+    <None Include="Views\index.liquid" />
+
+    <Compile Include="Liquid.fs" />
+    <Compile Include="Program.fs" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\AspFeat\AspFeat.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinimalApis.LiquidViews" Version="2.2.14" />
+  </ItemGroup>
+
+  <ItemGroup />
+
+</Project>
