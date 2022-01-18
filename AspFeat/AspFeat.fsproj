@@ -17,7 +17,7 @@
     <Compile Include="Endpoint.fs" />
     <Compile Include="Extensions.fs" />
     <Compile Include="Builder\WebApp.fs" />
-    <Compile Include="Builder\DefaultResponseCompression.fs" />
+    <Compile Include="Builder\ResponseCompression.fs" />
     <Compile Include="Builder\Endpoint.fs" />
   </ItemGroup>
 

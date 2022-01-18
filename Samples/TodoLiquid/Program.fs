@@ -19,6 +19,6 @@ let configureEndpoints bld =
 [<EntryPoint>]
 let main args =
     [ Liquid.feat ()
-      DefaultResponseCompression.feat ()
+      ResponseCompression.feat Feat.ignore
       Endpoint.feat configureEndpoints ]
     |> WebApp.run args

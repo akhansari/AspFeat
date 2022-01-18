@@ -96,7 +96,7 @@ let configureEndpoints bld =
 
 [<EntryPoint>]
 let main args =
-    [ DefaultResponseCompression.feat ()
+    [ ResponseCompression.feat Feat.ignore
       Endpoint.feat configureEndpoints
       Swagger.feat () ]
     |> WebApp.run args
