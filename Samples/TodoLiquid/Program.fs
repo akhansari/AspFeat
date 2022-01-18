@@ -1,4 +1,3 @@
-
 open AspFeat
 open AspFeat.Builder
 open AspFeat.Endpoint
@@ -6,10 +5,10 @@ open AspFeat.Endpoint
 type Todo =
     { Id: int32
       Name: string
-      IsCompleted: bool }
+      IsComplete: bool }
 
 let getTodo =
-    { Id = 1; Name = "Go back to work!"; IsCompleted = false }
+    { Id = 1; Name = "Go back to work!"; IsComplete = false }
     |> Liquid.write "Index"
 
 let configureEndpoints bld =
