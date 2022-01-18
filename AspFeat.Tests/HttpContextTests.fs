@@ -1,4 +1,4 @@
-module HttpContext
+module Tests.HttpContext
 
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http

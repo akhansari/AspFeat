@@ -1,4 +1,4 @@
-module Endpoint
+module Tests.Endpoint
 
 open System.Net
 open System.Net.Http.Json

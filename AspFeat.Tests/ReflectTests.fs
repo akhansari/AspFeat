@@ -1,4 +1,4 @@
-﻿module Reflect
+﻿module Tests.Reflect
 
 open System
 open FsCheck
