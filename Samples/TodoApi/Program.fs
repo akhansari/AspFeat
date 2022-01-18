@@ -93,7 +93,6 @@ let configureEndpoints bld =
         put    "/todos/{id:int}"   updateTodo (nameof updateTodo)
         delete "/todos/{id:int}"   deleteTodo (nameof deleteTodo)
     }
-    |> ignore
 
 [<EntryPoint>]
 let main args =

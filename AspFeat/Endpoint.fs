@@ -174,6 +174,7 @@ type EndpointsMetadataBuilder<'T> (builder: IEndpointRouteBuilder) =
         |> function
         | Some mi -> addMetadataFromMethodInfo conv mi
         | None -> failwith $"Method '{methodName}' not found in '{group.Name}' type."
+        |> ignore
 
     member _.Yield _ = ()
 
